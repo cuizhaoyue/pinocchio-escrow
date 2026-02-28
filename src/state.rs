@@ -37,6 +37,26 @@ impl Escrow {
         }))
     }
 
+    // #[inline(always)]
+    // pub fn load(bytes: &[u8]) -> Result<&Self, ProgramError> {
+    //     if bytes.len() != Self::LEN {
+    //         return Err(ProgramError::InvalidAccountData);
+    //     }
+    //     Ok(unsafe {
+    //         Self::from_bytes_unchecked(bytes)
+    //     })
+    // }
+
+    // #[inline(always)]
+    // pub fn load_mut(bytes: &mut [u8]) -> Result<&mut Self, ProgramError> {
+    //     if bytes.len() != Self::LEN {
+    //         return Err(ProgramError::InvalidAccountData);
+    //     }
+    //     Ok(unsafe {
+    //         Self::from_bytes_unchecked_mut(bytes)
+    //     })
+    // }
+
     #[inline(always)]
     unsafe fn from_bytes_unchecked(bytes: &[u8]) -> &Self {
         &*(bytes.as_ptr() as *const Self)

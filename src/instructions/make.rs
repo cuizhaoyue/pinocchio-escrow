@@ -108,6 +108,7 @@ impl<'a> MakeContext<'a> {
         // -------------- 通用参数检查 ---------------------
         check_signer(self.accounts.maker)?;
         check_program(self.accounts.token_program, &pinocchio_token::ID)?;
+        check_program(self.accounts.system_program, &pinocchio_system::ID)?;
         check_non_zero(&[self.instruction_data.receive, self.instruction_data.amount])?;
         verify_mint_account(self.accounts.mint_a)?;
         verify_mint_account(self.accounts.mint_b)?;
@@ -127,12 +128,12 @@ impl<'a> MakeContext<'a> {
             return Err(ProgramError::InvalidAccountData);
         }
         // -------------- 创建 Escrow PDA 签名 ---------------
-        let escorw_bump_binding = [escrow_bump];
+        let escrow_bump_binding = [escrow_bump];
         let escrow_seeds = [
             Seed::from(b"escrow"),
             Seed::from(self.accounts.maker.address().as_ref()),
             Seed::from(&seed_binding),
-            Seed::from(&escorw_bump_binding),
+            Seed::from(&escrow_bump_binding),
         ];
         let escrow_signers = Signer::from(&escrow_seeds);
 
@@ -147,15 +148,17 @@ impl<'a> MakeContext<'a> {
         )?;
 
         // --------------- 初始化Escrow数据 ------------------
-        let mut escrow = Escrow::load_mut(self.accounts.escrow)?;
-        escrow.set_inner(
-            self.instruction_data.seed,
-            self.accounts.maker.address().clone(),
-            self.accounts.mint_a.address().clone(),
-            self.accounts.mint_b.address().clone(),
-            self.instruction_data.receive,
-            escorw_bump_binding,
-        );
+        {
+            let mut escrow = Escrow::load_mut(self.accounts.escrow)?;
+            escrow.set_inner(
+                self.instruction_data.seed,
+                self.accounts.maker.address().clone(),
+                self.accounts.mint_a.address().clone(),
+                self.accounts.mint_b.address().clone(),
+                self.instruction_data.receive,
+                escrow_bump_binding,
+            );
+        }
 
         // --------------- 创建Vault ATA 账户 ------------------
         Create {
