@@ -1,4 +1,5 @@
 use pinocchio::{error::ProgramError, AccountView, Address, ProgramResult};
+use pinocchio_associated_token_account::instructions::CreateIdempotent;
 
 /// 校验账户是否是签名者
 pub fn check_signer(account: &AccountView) -> ProgramResult {
@@ -50,4 +51,25 @@ pub fn close(account: &AccountView, destination: &AccountView) -> ProgramResult 
     destination.set_lamports(destination_balance);
     account.set_lamports(0);
     account.close()
+}
+
+pub fn init_ata_if_needed(
+    account: &AccountView,
+    mint: &AccountView,
+    payer: &AccountView,
+    authority: &AccountView,
+    system_program: &AccountView,
+    token_program: &AccountView,
+) -> ProgramResult {
+    CreateIdempotent {
+        funding_account: payer,
+        account,
+        mint,
+        wallet: authority,
+        system_program,
+        token_program,
+    }
+    .invoke()?;
+
+    Ok(())
 }

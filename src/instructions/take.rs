@@ -7,8 +7,9 @@ use pinocchio_token::{
     instructions::{CloseAccount, Transfer},
     state::TokenAccount,
 };
+use solana_program_log::log;
 
-use crate::{check_program, check_signer, close, verify_mint_account, Escrow};
+use crate::{check_program, check_signer, close, init_ata_if_needed, verify_mint_account, Escrow};
 
 pub struct TakeAccounts<'a> {
     pub taker: &'a AccountView,
@@ -85,6 +86,22 @@ impl<'a> TakeContext<'a> {
         if !self.accounts.escrow.owned_by(program_id) {
             return Err(ProgramError::InvalidAccountData);
         }
+        init_ata_if_needed(
+            self.accounts.taker_ata_a,
+            self.accounts.mint_a,
+            self.accounts.taker,
+            self.accounts.taker,
+            self.accounts.system_program,
+            self.accounts.token_program,
+        )?;
+        init_ata_if_needed(
+            self.accounts.maker_ata_b,
+            self.accounts.mint_b,
+            self.accounts.taker,
+            self.accounts.maker,
+            self.accounts.system_program,
+            self.accounts.token_program,
+        )?;
 
         // ------------- 获取订单数据 --------------------
         let (escrow_seed, escrow_receive, escrow_bump) = {
@@ -92,15 +109,7 @@ impl<'a> TakeContext<'a> {
             (escrow.seed(), escrow.receive(), escrow.bump())
         };
 
-        // ------------- 转账 --------------------
-        Transfer {
-            from: self.accounts.taker_ata_b,
-            to: self.accounts.maker_ata_b,
-            authority: self.accounts.taker,
-            amount: escrow_receive,
-        }
-        .invoke()?;
-
+        // -------------获取 Escrow PDA 签名 -------------------
         let seed_binding = escrow_seed.to_le_bytes();
         let escrow_seeds = [
             Seed::from(b"escrow"),
@@ -108,7 +117,7 @@ impl<'a> TakeContext<'a> {
             Seed::from(&seed_binding),
             Seed::from(&escrow_bump),
         ];
-        let escrow_signers = Signer::from(&escrow_seeds);
+        let escrow_signers = [Signer::from(&escrow_seeds)];
 
         let vault = unsafe { TokenAccount::from_account_view_unchecked(self.accounts.vault)? };
         if vault.owner().ne(self.accounts.escrow.address())
@@ -119,21 +128,32 @@ impl<'a> TakeContext<'a> {
 
         let amount = vault.amount();
 
+        // ------------- 转账 --------------------
+        log("transfer 1");
         Transfer {
             from: self.accounts.vault,
             to: self.accounts.taker_ata_a,
             authority: self.accounts.escrow,
             amount: amount,
         }
-        .invoke_signed(&[escrow_signers.clone()])?;
+        .invoke_signed(&escrow_signers)?;
 
-        // ------------- 关闭金库账户和托管账户 --------------------
+        log("close 1");
         CloseAccount {
             account: self.accounts.vault,
             authority: self.accounts.escrow,
             destination: self.accounts.maker,
         }
-        .invoke_signed(&[escrow_signers.clone()])?;
+        .invoke_signed(&escrow_signers)?;
+
+        log("transfer 2");
+        Transfer {
+            from: self.accounts.taker_ata_b,
+            to: self.accounts.maker_ata_b,
+            authority: self.accounts.taker,
+            amount: escrow_receive,
+        }
+        .invoke()?;
 
         close(self.accounts.escrow, self.accounts.taker)?;
 
