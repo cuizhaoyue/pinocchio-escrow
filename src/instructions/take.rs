@@ -7,7 +7,6 @@ use pinocchio_token::{
     instructions::{CloseAccount, Transfer},
     state::TokenAccount,
 };
-use solana_program_log::log;
 
 use crate::{check_program, check_signer, close, init_ata_if_needed, verify_mint_account, Escrow};
 
@@ -129,7 +128,6 @@ impl<'a> TakeContext<'a> {
         let amount = vault.amount();
 
         // ------------- 转账 --------------------
-        log("transfer 1");
         Transfer {
             from: self.accounts.vault,
             to: self.accounts.taker_ata_a,
@@ -138,7 +136,6 @@ impl<'a> TakeContext<'a> {
         }
         .invoke_signed(&escrow_signers)?;
 
-        log("close 1");
         CloseAccount {
             account: self.accounts.vault,
             authority: self.accounts.escrow,
@@ -146,7 +143,6 @@ impl<'a> TakeContext<'a> {
         }
         .invoke_signed(&escrow_signers)?;
 
-        log("transfer 2");
         Transfer {
             from: self.accounts.taker_ata_b,
             to: self.accounts.maker_ata_b,

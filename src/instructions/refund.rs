@@ -8,7 +8,7 @@ use pinocchio_token::{
     state::TokenAccount,
 };
 
-use crate::{check_program, check_signer, close, verify_mint_account, Escrow};
+use crate::{check_program, check_signer, close, init_ata_if_needed, verify_mint_account, Escrow};
 
 pub struct RefundAccounts<'a> {
     pub maker: &'a AccountView,
@@ -64,6 +64,14 @@ impl<'a> RefundContext<'a> {
         if !self.accounts.escrow.owned_by(program_id) {
             return Err(ProgramError::InvalidAccountData);
         }
+        init_ata_if_needed(
+            self.accounts.maker_ata_a,
+            self.accounts.mint_a,
+            self.accounts.maker,
+            self.accounts.maker,
+            self.accounts.system_program,
+            self.accounts.token_program,
+        )?;
 
         // --------------- 获取托管信息 ------------------
         let (escorw_seed, escrow_bump) = {
