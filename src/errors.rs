@@ -28,6 +28,7 @@ pub enum EscrowError {
     InvalidSystemProgram = 2,
     // token_program 非 SPL Token 程序账户。
     InvalidTokenProgram = 3,
+    InvalidOwner = 4,
 }
 
 impl From<EscrowError> for ProgramError {
@@ -49,6 +50,7 @@ impl fmt::Display for EscrowError {
             EscrowError::InvalidMaker => write!(f, "maker 不一致"),
             EscrowError::InvalidSystemProgram => write!(f, "system_program 非系统程序账户"),
             EscrowError::InvalidTokenProgram => write!(f, "token_program 非 SPL Token 账户"),
+            EscrowError::InvalidOwner => write!(f, "非法的所有者"),
         }
     }
 }

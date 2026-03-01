@@ -1,6 +1,6 @@
 use crate::{
     AssociatedTokenAccount, Escrow, MintInterface, ProgramAccount, SignerAccount, SystemProgram,
-    TokenAccount,
+    TokenProgram,
 };
 use core::mem::size_of;
 use pinocchio::{cpi::Seed, error::ProgramError, AccountView, Address, ProgramResult};
@@ -53,7 +53,7 @@ impl<'a> TryFrom<&'a [AccountView]> for MakeAccounts<'a> {
         MintInterface::check(mint_b)?;
         AssociatedTokenAccount::check(maker_ata_a, maker, mint_a, token_program)?;
         SystemProgram::check(system_program)?;
-        TokenAccount::check(token_program)?;
+        TokenProgram::check(token_program)?;
 
         Ok(Self {
             maker,
@@ -154,7 +154,7 @@ impl<'a> TryFrom<(&[u8], &'a [AccountView])> for MakeContext<'a> {
 
         // 初始化 escrow 账户与 vault ATA。
         // escrow 是 PDA 账户（owner=本程序），vault 是 escrow 对应的 ATA。
-        ProgramAccount::init(accounts.maker, accounts.escrow, &escrow_seeds, Escrow::LEN)?;
+        ProgramAccount::init(accounts.escrow, accounts.maker, &escrow_seeds, Escrow::LEN)?;
         AssociatedTokenAccount::init(
             accounts.vault,
             accounts.mint_a,

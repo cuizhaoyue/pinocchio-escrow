@@ -13,8 +13,8 @@ pub use errors::*;
 mod instructions;
 pub use instructions::*;
 
-// #[cfg(test)]
-// pub mod tests;
+#[cfg(test)]
+pub mod tests;
 
 declare_id!("22222222222222222222222222222222222222222222");
 

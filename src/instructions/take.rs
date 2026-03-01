@@ -61,9 +61,9 @@ impl<'a> TryFrom<&'a [AccountView]> for TakeAccounts<'a> {
         SignerAccount::check(taker)?;
         MintInterface::check(mint_a)?;
         MintInterface::check(mint_b)?;
-        AssociatedTokenAccount::check(taker_ata_a, taker, mint_a, token_program)?;
+        
+        // 要对需要付款的ATA账户进行校验，保证已经存在且地址正确
         AssociatedTokenAccount::check(taker_ata_b, taker, mint_b, token_program)?;
-        AssociatedTokenAccount::check(maker_ata_b, maker, mint_b, token_program)?;
         AssociatedTokenAccount::check(vault, escrow, mint_a, token_program)?;
         SystemProgram::check(system_program)?;
         TokenProgram::check(token_program)?;

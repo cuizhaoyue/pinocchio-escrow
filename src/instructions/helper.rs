@@ -7,6 +7,7 @@ use pinocchio::{
 };
 use pinocchio_associated_token_account::instructions::{Create, CreateIdempotent};
 use pinocchio_system::instructions::CreateAccount;
+use solana_program_log::log;
 
 // ============================
 // 新手说明（helper 模块）
@@ -60,7 +61,8 @@ impl MintInterface {
     #[inline(always)]
     pub fn check(account: &AccountView) -> Result<(), ProgramError> {
         if !account.owned_by(&pinocchio_token::ID) {
-            return Err(ProgramError::InvalidAccountOwner);
+            println!("{}", EscrowError::InvalidOwner);
+            return Err(EscrowError::InvalidOwner.into());
         }
         if account.data_len() != pinocchio_token::state::Mint::LEN {
             return Err(ProgramError::InvalidAccountData);
@@ -75,7 +77,8 @@ impl TokenAccount {
     #[inline(always)]
     pub fn check(account: &AccountView) -> Result<(), ProgramError> {
         if !account.owned_by(&pinocchio_token::ID) {
-            return Err(ProgramError::InvalidAccountOwner);
+            log(EscrowError::InvalidOwner.to_string().as_str());
+            return Err(EscrowError::InvalidOwner.into());
         }
         if account.data_len() != pinocchio_token::state::TokenAccount::LEN {
             return Err(ProgramError::InvalidAccountData);
