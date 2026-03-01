@@ -13,26 +13,25 @@ pub use errors::*;
 mod instructions;
 pub use instructions::*;
 
+// #[cfg(test)]
+// pub mod tests;
+
 declare_id!("22222222222222222222222222222222222222222222");
 
 entrypoint!(process_instruction);
 
 pub fn process_instruction(
-    program_id: &Address,
+    _program_id: &Address,
     accounts: &[AccountView],
     instruction_data: &[u8],
 ) -> ProgramResult {
     log!("Hello from my pinocchio program!");
     match instruction_data.split_first() {
-        Some((MakeContext::DISCRIMINATOR, data)) => {
-            MakeContext::try_from((accounts, data))?.process(program_id)
+        Some((&MakeContext::DISCRIMINATOR, data)) => {
+            MakeContext::try_from((data, accounts))?.process()
         }
-        Some((TakeContext::DISCRIMINATOR, _)) => {
-            TakeContext::try_from(accounts)?.process(program_id)
-        }
-        Some((RefundContext::DISCRIMINATOR, _)) => {
-            RefundContext::try_from(accounts)?.process(program_id)
-        }
+        Some((&TakeContext::DISCRIMINATOR, _)) => TakeContext::try_from(accounts)?.process(),
+        Some((&RefundContext::DISCRIMINATOR, _)) => RefundContext::try_from(accounts)?.process(),
         _ => Err(ProgramError::InvalidInstructionData),
     }
     // Ok(())
